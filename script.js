@@ -1,61 +1,144 @@
 // إعداد Firebase
-// Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
-
-// Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-  apiKey: "AIzaSyCd4bYLi11feBNqqc9KmBQAB_KIuN71lWU",
-  authDomain: "musteridefter.firebaseapp.com",
-  databaseURL: "https://musteridefter-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId: "musteridefter",
-  storageBucket: "musteridefter.firebasestorage.app",
-  messagingSenderId: "335722692919",
-  appId: "1:335722692919:web:93d7c6e0656ae18d019ab2",
-  measurementId: "G-3Z4Q457BD6"
+    apiKey: "API_KEY",
+    authDomain: "PROJECT_ID.firebaseapp.com",
+    databaseURL: "https://PROJECT_ID.firebaseio.com",
+    projectId: "PROJECT_ID",
+    storageBucket: "PROJECT_ID.appspot.com",
+    messagingSenderId: "SENDER_ID",
+    appId: "APP_ID"
 };
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
 firebase.initializeApp(firebaseConfig);
 
+// تحقق من حالة تسجيل الدخول عند تحميل الصفحة
+firebase.auth().onAuthStateChanged((user) => {
+    const currentPage = window.location.pathname;
+
+    if (user) {
+        if (currentPage.includes('index.html')) {
+            // إذا كان المستخدم مسجل دخولاً بالفعل انقله إلى صفحة العملاء
+            window.location.href = 'customers.html';
+        }
+    } else {
+        if (currentPage.includes('customers.html')) {
+            // إذا لم يكن المستخدم مسجل دخول انقله إلى صفحة تسجيل الدخول
+            window.location.href = 'index.html';
+        }
+    }
+});
+
 // تسجيل الدخول
-function login() {
-    const email = document.getElementById("email").value;
-    const password = document.getElementById("password").value;
+if (document.getElementById('loginBtn')) {
+    loginBtn.addEventListener('click', () => {
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
 
-    firebase.auth().signInWithEmailAndPassword(email, password)
-        .then(() => {
-            alert("تم تسجيل الدخول بنجاح!");
-            window.location.href = "customers.html"; // انتقال لصفحة العملاء
-        })
-        .catch(error => alert("خطأ: " + error.message));
-}
-
-// إضافة عميل
-function addCustomer() {
-    const name = document.getElementById("customerName").value;
-    const debt = document.getElementById("customerDebt").value;
-
-    firebase.database().ref("customers").push({
-        name: name,
-        debt: debt
+        firebase.auth().signInWithEmailAndPassword(email, password)
+            .then(() => {
+                window.location.href = 'customers.html';
+            })
+            .catch((error) => {
+                document.getElementById('loginError').textContent = "خطأ: " + error.message;
+            });
     });
 }
 
-// جلب العملاء من Firebase
-firebase.database().ref("customers").on("value", snapshot => {
-    const list = document.getElementById("customerList");
-    if (list) {
-        list.innerHTML = ""; // تفريغ القائمة
-        snapshot.forEach(child => {
-            const item = document.createElement("li");
-            item.textContent = `${child.val().name}: ${child.val().debt}`;
-            list.appendChild(item);
+// تسجيل الخروج
+if (document.getElementById('logoutBtn')) {
+    logoutBtn.addEventListener('click', () => {
+        firebase.auth().signOut().then(() => {
+            window.location.href = 'index.html';
+        });
+    });
+}
+
+// إضافة عميل
+if (document.getElementById('addCustomerBtn')) {
+    addCustomerBtn.addEventListener('click', () => {
+        const customerName = document.getElementById('customerName').value;
+        const customerDebt = document.getElementById('customerDebt').value;
+
+        if (customerName && customerDebt) {
+            const userId = firebase.auth().currentUser.uid;
+            firebase.database().ref('customers/' + userId).push({
+                name: customerName,
+                debt: customerDebt
+            });
+
+            fetchCustomers(); // تحديث القائمة
+        }
+    });
+}
+
+// جلب قائمة العملاء
+function fetchCustomers() {
+    const userId = firebase.auth().currentUser.uid;
+    const customersList = document.getElementById('customersList');
+
+    if (customersList) {
+        customersList.innerHTML = '';
+        firebase.database().ref('customers/' + userId).once('value', (snapshot) => {
+            snapshot.forEach((childSnapshot) => {
+                const customer = childSnapshot.val();
+                const li = document.createElement('li');
+                li.textContent = `الاسم: ${customer.name} - المديونية: ${customer.debt}`;
+                customersList.appendChild(li);
+            });
         });
     }
+}
+// تسجيل الدخول
+loginBtn.addEventListener('click', () => {
+    const email = emailInput.value;
+    const password = passwordInput.value;
+
+    firebase.auth().signInWithEmailAndPassword(email, password)
+        .then(() => {
+            loginPage.style.display = 'none';
+            appPage.style.display = 'block';
+            fetchCustomers();
+        })
+        .catch((error) => {
+            loginError.textContent = "خطأ: " + error.message;
+        });
 });
+
+// تسجيل الخروج
+logoutBtn.addEventListener('click', () => {
+    firebase.auth().signOut().then(() => {
+        appPage.style.display = 'none';
+        loginPage.style.display = 'block';
+    });
+});
+
+// إضافة عميل
+addCustomerBtn.addEventListener('click', () => {
+    const customerName = customerNameInput.value;
+    const customerDebt = customerDebtInput.value;
+
+    if (customerName && customerDebt) {
+        const userId = firebase.auth().currentUser.uid; // معرف المستخدم
+        firebase.database().ref('customers/' + userId).push({
+            name: customerName,
+            debt: customerDebt
+        });
+        customerNameInput.value = '';
+        customerDebtInput.value = '';
+        fetchCustomers();
+    }
+});
+
+// جلب العملاء الخاصين بالمستخدم الحالي
+function fetchCustomers() {
+    const userId = firebase.auth().currentUser.uid; // معرف المستخدم
+    customersList.innerHTML = ''; // مسح القائمة قبل إعادة العرض
+    firebase.database().ref('customers/' + userId).once('value', (snapshot) => {
+        snapshot.forEach((childSnapshot) => {
+            const customer = childSnapshot.val();
+            const li = document.createElement('li');
+            li.textContent = `الاسم: ${customer.name} - المديونية: ${customer.debt}`;
+            customersList.appendChild(li);
+        });
+    });
+}
+

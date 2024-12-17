@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إدارة العملاء</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- مكتبة Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>إدارة العملاء</h1>
+        <div class="form-group">
+            <label for="customerName">اسم العميل</label>
+            <input type="text" id="customerName" placeholder="أدخل اسم العميل">
+        </div>
+        <div class="form-group">
+            <label for="customerDebt">المديونية</label>
+            <input type="number" id="customerDebt" placeholder="أدخل المديونية">
+        </div>
+        <button onclick="addCustomer()">إضافة العميل</button>
+        
+        <h2>قائمة العملاء</h2>
+        <ul id="customerList"></ul>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
